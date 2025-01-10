@@ -20,7 +20,4 @@ export class User extends Model {
     defaultValue: "user"
   })
   role: string
-
-  @Column
-  verificationToken: string
 }

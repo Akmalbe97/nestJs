@@ -4,6 +4,7 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { AuthController } from './auth/auth.controller';
 import { AuthModule } from './auth/auth.module';
 import { User } from './auth/user.model';
+import { CustomLogger } from './log/logger';
 
 @Module({
   imports: [
@@ -22,6 +23,6 @@ import { User } from './auth/user.model';
     AuthModule
   ],
   controllers: [AuthController],
-  providers: []
+  providers: [CustomLogger]
 })
 export class AppModule {}

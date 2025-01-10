@@ -9,12 +9,14 @@ import { InjectModel } from '@nestjs/sequelize';
 import { User } from './user.model';
 import { CreateUserDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
-import * as jwt from 'jsonwebtoken';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectModel(User) private readonly userModel: typeof User) {}
+    @InjectModel(User) private readonly userModel: typeof User,
+    private readonly jwtService: JwtService
+  ) {}
 
   @HttpCode(201)
   @Post('register')
@@ -26,10 +28,7 @@ export class AuthService {
 
       const user = await this.userModel.create({
         email,
-        password: hashedPassword,
-        verificationToken: jwt.sign({ email }, process.env.JWT_SECRET_KEY, {
-          expiresIn: '1h',
-        })
+        password: hashedPassword
       });
 
       return { message: 'User successfully registered', user };
@@ -55,15 +54,18 @@ export class AuthService {
     try {
       const user = await this.userModel.findOne({ where: { email } });
       if (!user) {
-        throw new UnauthorizedException('Invalid credentials'); 
+        throw new Error('User not found'); 
       }
 
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
-        throw new UnauthorizedException('Invalid credentials');
+        throw new UnauthorizedException('wrong password!');
       }
-
-      const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET_KEY, {expiresIn: '1h'});
+      const payload = {id:user.id, email:user.email, role: user.role}
+      const token = await this.jwtService.signAsync(payload, {
+        secret: process.env.JWT_SECRET_KEY,
+        expiresIn: "1d"
+      })
 
       return { message: 'Login successful', token };
     } catch (error) {
